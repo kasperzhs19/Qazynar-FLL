@@ -1,0 +1,924 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Online Museum — 3D Artifact Gallery</title>
+  <meta name="description" content="An online museum experience with interactive 3D artifacts using model-viewer." />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <!-- model-viewer (Google) -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+  <script nomodule src="https://unpkg.com/@google/model-viewer/dist/model-viewer-legacy.js"></script>
+
+  <style>
+    :root { color-scheme: dark; }
+
+    /* Subtle museum grain */
+    .grain::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        radial-gradient(circle at 20% 10%, rgba(255,255,255,.05), transparent 40%),
+        radial-gradient(circle at 80% 30%, rgba(255,255,255,.04), transparent 35%),
+        radial-gradient(circle at 40% 80%, rgba(255,255,255,.035), transparent 45%),
+        linear-gradient(0deg, rgba(0,0,0,.35), rgba(0,0,0,.35));
+      mix-blend-mode: overlay;
+      opacity: .65;
+    }
+
+    /* Nice scrollbars */
+    *::-webkit-scrollbar { height: 10px; width: 10px; }
+    *::-webkit-scrollbar-thumb { background: rgba(255,255,255,.16); border-radius: 999px; }
+    *::-webkit-scrollbar-track { background: rgba(255,255,255,.06); }
+
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(1200px 500px at 50% 15%, rgba(255,255,255,.06), transparent 60%),
+                  radial-gradient(900px 400px at 50% 80%, rgba(255,255,255,.05), transparent 55%),
+                  linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.25));
+      border-radius: 1rem;
+      overflow: hidden;
+    }
+
+    /* Hotspot styling */
+    .hotspot {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .35rem .55rem;
+      border-radius: 999px;
+      background: rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.14);
+      color: rgba(255,255,255,.9);
+      font-size: 12px;
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      transform: translate(-50%, -50%);
+    }
+    .hotspot::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: #fbbf24;
+      box-shadow: 0 0 0 4px rgba(251,191,36,.15);
+    }
+
+    /* model-viewer progress bar */
+    .progress-bar {
+      display: block;
+      width: 100%;
+      height: 6px;
+      max-width: 300px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.12);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,.12);
+    }
+    .progress-bar .update-bar {
+      background: linear-gradient(90deg, #fbbf24, #f97316);
+      width: 0%;
+      height: 100%;
+    }
+
+    /* Reduce motion */
+    @media (prefers-reduced-motion: reduce) {
+      .animate-pulse, .animate-spin { animation: none !important; }
+    }
+  </style>
+</head>
+
+<body class="min-h-screen bg-zinc-950 text-zinc-100">
+  <header class="sticky top-0 z-40 border-b border-white/10 bg-zinc-950/70 backdrop-blur">
+    <div class="mx-auto max-w-7xl px-4 py-4">
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div class="flex items-center gap-3">
+            <img src="NAR.jpeg" alt="NAR Logo" class="h-10 w-10 rounded-xl">
+          <div>
+            <h1 class="text-lg font-semibold tracking-tight" data-i18n="siteTitle">Online Museum</h1>
+            <p class="text-xs text-zinc-400" data-i18n="siteSubtitle">Explore artifacts in 3D • rotate • zoom • AR (supported devices)</p>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2 md:flex-row md:items-center">
+          <div class="relative">
+            <input id="search" type="search" placeholder="Search artifacts…" class="w-full md:w-[320px] rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm outline-none focus:border-amber-400/60 focus:ring-2 focus:ring-amber-300/10" />
+            <div class="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 21L16.65 16.65M10.5 18C14.6421 18 18 14.6421 18 10.5C18 6.35786 14.6421 3 10.5 3C6.35786 3 3 6.35786 3 10.5C3 14.6421 6.35786 18 10.5 18Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="btnLang" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10 font-mono text-zinc-300">RU</button>
+            <button id="btnHelp" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10" data-i18n="btnHelp">How to view</button>
+            <a href="#gallery" class="rounded-xl bg-amber-400/15 border border-amber-400/25 px-3 py-2 text-sm text-amber-200 hover:bg-amber-400/20" data-i18n="btnBrowse">Browse gallery</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="mx-auto max-w-7xl px-4 py-8">
+    <section class="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/5 to-transparent p-6 md:p-10">
+      <div class="grain absolute inset-0"></div>
+      <div class="relative grid gap-8 md:grid-cols-2 md:items-center">
+        <div>
+          <p class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-zinc-300">
+            <span class="h-2 w-2 rounded-full bg-amber-300 shadow-[0_0_0_4px_rgba(251,191,36,.15)]"></span>
+            Powered by &lt;model-viewer&gt;
+          </p>
+          <h2 class="mt-4 text-3xl md:text-4xl font-semibold tracking-tight" data-i18n="heroTitle">Walk through history — from anywhere.</h2>
+          <p class="mt-3 text-zinc-300 leading-relaxed" data-i18n="heroDesc">Interact with museum-grade 3D scans: rotate, zoom, switch lighting, and inspect points of interest. On supported devices you can launch AR to place artifacts in your space.</p>
+
+          <div class="mt-6 flex flex-wrap gap-2">
+            <button id="btnRandom" class="rounded-xl bg-white/5 border border-white/10 px-4 py-2 text-sm hover:bg-white/10" data-i18n="btnSurprise">Surprise me</button>
+            <button id="btnFocus" class="rounded-xl bg-amber-400/15 border border-amber-400/25 px-4 py-2 text-sm text-amber-200 hover:bg-amber-400/20" data-i18n="btnFocus">Focus on details</button>
+          </div>
+
+          <dl class="mt-6 grid grid-cols-3 gap-4 text-sm">
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
+              <dt class="text-zinc-400 text-xs" data-i18n="statArtifacts">Artifacts</dt>
+              <dd id="statCount" class="mt-1 text-lg font-semibold">—</dd>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
+              <dt class="text-zinc-400 text-xs" data-i18n="statMode">Viewing mode</dt>
+              <dd id="statMode" class="mt-1 text-lg font-semibold">3D</dd>
+            </div>
+            <div class="rounded-2xl border border-white/10 bg-white/5 p-3">
+              <dt class="text-zinc-400 text-xs" data-i18n="statTips">Tips</dt>
+              <dd class="mt-1 text-lg font-semibold" data-i18n="statDrag">Drag + Scroll</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="relative">
+          <div class="rounded-3xl border border-white/10 bg-white/5 p-3">
+            <div class="aspect-[4/3] w-full">
+              <model-viewer id="viewer"
+                src=""
+                alt="3D artifact"
+                ar
+                ar-modes="webxr scene-viewer quick-look"
+                camera-controls
+                touch-action="pan-y"
+                tone-mapping="neutral"
+                exposure="1"
+                shadow-intensity="1"
+                shadow-softness="1"
+                environment-image="neutral"
+                autoplay
+                interaction-prompt="auto"
+                interaction-prompt-style="basic"
+                camera-orbit="0deg 75deg 2.6m"
+                field-of-view="30deg"
+              >
+                <button slot="ar-button" class="absolute left-3 bottom-3 rounded-xl bg-amber-400/20 border border-amber-400/30 px-3 py-2 text-sm text-amber-200 hover:bg-amber-400/25" data-i18n="btnAR">View in your space (AR)</button>
+
+                <div slot="progress-bar" class="absolute left-1/2 top-3 -translate-x-1/2">
+                  <div class="progress-bar">
+                    <div class="update-bar"></div>
+                  </div>
+                </div>
+
+                <div id="hotspotWrap"></div>
+              </model-viewer>
+            </div>
+
+            <div class="mt-3 grid gap-2 md:grid-cols-2">
+              <div class="rounded-2xl border border-white/10 bg-black/20 p-3">
+                <div class="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 id="artifactTitle" class="font-semibold">—</h3>
+                    <p id="artifactMeta" class="mt-1 text-xs text-zinc-400">—</p>
+                  </div>
+                  <button id="btnReset" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs hover:bg-white/10" data-i18n="btnReset">Reset view</button>
+                </div>
+                <p id="artifactDesc" class="mt-3 text-sm text-zinc-300 leading-relaxed" data-i18n="selectPrompt">Select an artifact from the gallery to begin.</p>
+              </div>
+
+              <div class="rounded-2xl border border-white/10 bg-black/20 p-3">
+                <div class="flex items-center justify-between">
+                  <p class="text-xs text-zinc-400" data-i18n="lblLighting">Lighting</p>
+                  <div class="flex gap-2">
+                    <button data-env="neutral" class="envBtn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs hover:bg-white/10" data-i18n="lightNeutral">Neutral</button>
+                    <button data-env="legacy" class="envBtn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs hover:bg-white/10" data-i18n="lightStudio">Studio</button>
+                    <button data-env="street" class="envBtn rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs hover:bg-white/10" data-i18n="lightStreet">Street</button>
+                  </div>
+                </div>
+                <div class="mt-3">
+                  <label class="flex items-center justify-between gap-3 text-xs text-zinc-400">
+                    <span data-i18n="lblExposure">Exposure</span>
+                    <span id="exposureVal" class="tabular-nums text-zinc-200">1.00</span>
+                  </label>
+                  <input id="exposure" type="range" min="0.5" max="1.8" value="1" step="0.05" class="mt-2 w-full" />
+                </div>
+
+                <div class="mt-4">
+                  <label class="flex items-center justify-between gap-3 text-xs text-zinc-400">
+                    <span data-i18n="lblAutoRotate">Auto-rotate</span>
+                    <span id="rotateVal" class="text-zinc-200">On</span>
+                  </label>
+                  <button id="btnRotate" class="mt-2 w-full rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm hover:bg-white/10" data-i18n="btnToggleRotate">Toggle auto-rotate</button>
+                </div>
+
+                <p id="arHint" class="mt-3 text-xs text-zinc-400" data-i18n="arHint">AR availability depends on your device/browser.</p>
+              </div>
+            </div>
+          </div>
+
+          <div id="toast" class="pointer-events-none fixed bottom-5 left-1/2 -translate-x-1/2 opacity-0 transition-opacity duration-200">
+            <div class="pointer-events-auto rounded-xl border border-white/10 bg-zinc-900/90 px-4 py-3 text-sm text-zinc-200 shadow-lg backdrop-blur">
+              <span id="toastText">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="gallery" class="mt-10">
+      <div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h2 class="text-2xl font-semibold tracking-tight" data-i18n="galleryTitle">Artifact Gallery</h2>
+          <p class="mt-1 text-sm text-zinc-400" data-i18n="gallerySubtitle">Click a card to load its 3D model. Use hotspots for guided details.</p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+          <button data-filter="all" class="filterBtn rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10" data-i18n="filterAll">All</button>
+          <button data-filter="sculpture" class="filterBtn rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10" data-i18n="filterSculpture">Sculpture</button>
+          <button data-filter="object" class="filterBtn rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10" data-i18n="filterObject">Object</button>
+          <button data-filter="architecture" class="filterBtn rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10" data-i18n="filterArchitecture">Architecture</button>
+        </div>
+      </div>
+
+      <div id="grid" class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+    </section>
+
+    <footer class="mt-12 border-t border-white/10 pt-6 pb-10">
+      <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <p class="text-sm text-zinc-400" data-i18n="footerText">Built as a single-page demo. Models courtesy of public sample assets (Khronos / Google). Replace URLs with your own GLB/GLTF files for a real museum collection.</p>
+        <div class="flex items-center gap-3 text-sm">
+          <a class="text-zinc-300 hover:text-white" href="https://modelviewer.dev/" target="_blank" rel="noreferrer">modelviewer.dev</a>
+          <span class="text-white/15">•</span>
+          <a class="text-zinc-300 hover:text-white" href="#" id="btnCredits" data-i18n="btnCredits">Credits</a>
+        </div>
+      </div>
+    </footer>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-black/70"></div>
+    <div class="absolute inset-0 grid place-items-center p-4">
+      <div class="w-full max-w-lg rounded-2xl border border-white/10 bg-zinc-950 p-5 shadow-2xl">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 id="modalTitle" class="text-lg font-semibold">—</h3>
+            <p id="modalSubtitle" class="mt-1 text-sm text-zinc-400">—</p>
+          </div>
+          <button id="modalClose" class="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10">Close</button>
+        </div>
+        <div id="modalBody" class="mt-4 text-sm text-zinc-200 leading-relaxed"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const translations = {
+      en: {
+        siteTitle: 'Online Museum',
+        siteSubtitle: 'Explore artifacts in 3D • rotate • zoom • AR (supported devices)',
+        placeholderSearch: 'Search artifacts…',
+        btnHelp: 'How to view',
+        btnBrowse: 'Browse gallery',
+        heroTitle: 'Walk through history — from anywhere.',
+        heroDesc: 'Interact with museum-grade 3D scans: rotate, zoom, switch lighting, and inspect points of interest. On supported devices you can launch AR to place artifacts in your space.',
+        btnSurprise: 'Surprise me',
+        btnFocus: 'Focus on details',
+        statArtifacts: 'Artifacts',
+        statMode: 'Viewing mode',
+        statTips: 'Tips',
+        statDrag: 'Drag + Scroll',
+        btnAR: 'View in your space (AR)',
+        btnReset: 'Reset view',
+        selectPrompt: 'Select an artifact from the gallery to begin.',
+        lblLighting: 'Lighting',
+        lightNeutral: 'Neutral',
+        lightStudio: 'Studio',
+        lightStreet: 'Street',
+        lblExposure: 'Exposure',
+        lblAutoRotate: 'Auto-rotate',
+        btnToggleRotate: 'Toggle auto-rotate',
+        arHint: 'AR availability depends on your device/browser.',
+        galleryTitle: 'Artifact Gallery',
+        gallerySubtitle: 'Click a card to load its 3D model. Use hotspots for guided details.',
+        filterAll: 'All',
+        filterSculpture: 'Sculpture',
+        filterObject: 'Object',
+        filterArchitecture: 'Architecture',
+        footerText: 'Built as a single-page demo. Models courtesy of public sample assets (Khronos / Google). Replace URLs with your own GLB/GLTF files for a real museum collection.',
+        btnCredits: 'Credits',
+        cat_object: 'Category: Object',
+        cat_sculpture: 'Category: Sculpture',
+        cat_architecture: 'Category: Architecture',
+        load3D: 'Load 3D →',
+        noResults: 'No artifacts found. Try a different search or filter.',
+        toastLoaded: 'Loaded:',
+        toastReset: 'View reset',
+        toastFocusOn: 'Focus mode: closer view',
+        toastFocusOff: 'Focus mode: off',
+        arReady: 'AR ready: use “View in your space (AR)”.',
+        arNotReady: 'AR not available here (try Chrome/Android, or Safari/iOS).',
+        on: 'On',
+        off: 'Off'
+      },
+      ru: {
+        siteTitle: 'Онлайн Музей',
+        siteSubtitle: 'Исследуйте 3D артефакты • вращение • зум • AR (на поддерживаемых устройствах)',
+        placeholderSearch: 'Поиск артефактов…',
+        btnHelp: 'Как смотреть',
+        btnBrowse: 'Галерея',
+        heroTitle: 'Прогулка по истории — откуда угодно.',
+        heroDesc: 'Взаимодействуйте с музейными 3D-сканами: вращайте, приближайте, меняйте освещение и изучайте детали. На поддерживаемых устройствах можно включить AR.',
+        btnSurprise: 'Удивите меня',
+        btnFocus: 'Детализация',
+        statArtifacts: 'Артефактов',
+        statMode: 'Режим',
+        statTips: 'Советы',
+        statDrag: 'Тяни + Скролль',
+        btnAR: 'Посмотреть в AR',
+        btnReset: 'Сбросить вид',
+        selectPrompt: 'Выберите артефакт в галерее, чтобы начать.',
+        lblLighting: 'Освещение',
+        lightNeutral: 'Нейтральное',
+        lightStudio: 'Студия',
+        lightStreet: 'Улица',
+        lblExposure: 'Экспозиция',
+        lblAutoRotate: 'Авто-вращение',
+        btnToggleRotate: 'Переключить вращение',
+        arHint: 'Доступность AR зависит от вашего устройства/браузера.',
+        galleryTitle: 'Галерея артефактов',
+        gallerySubtitle: 'Нажмите на карточку для загрузки 3D модели.',
+        filterAll: 'Все',
+        filterSculpture: 'Скульптура',
+        filterObject: 'Предмет',
+        filterArchitecture: 'Архитектура',
+        footerText: 'Создано как демо. Модели предоставлены Khronos / Google. Замените URL на свои GLB/GLTF файлы.',
+        btnCredits: 'Кредиты',
+        cat_object: 'Категория: Предмет',
+        cat_sculpture: 'Категория: Скульптура',
+        cat_architecture: 'Категория: Архитектура',
+        load3D: 'Загрузить 3D →',
+        noResults: 'Артефакты не найдены. Попробуйте другой поиск.',
+        toastLoaded: 'Загружено:',
+        toastReset: 'Вид сброшен',
+        toastFocusOn: 'Фокус: близкий вид',
+        toastFocusOff: 'Фокус: выкл',
+        arReady: 'AR готов: используйте кнопку AR.',
+        arNotReady: 'AR недоступен (попробуйте Chrome/Android или Safari/iOS).',
+        on: 'Вкл',
+        off: 'Выкл'
+      }
+    };
+
+    const artifacts = [
+      {
+        id: 'helmet',
+        title: 'Kazakh Ceramic Vase',
+        title_ru: 'Казахская керамическая ваза',
+        subtitle: 'Traditional Pottery • Kazakh Culture',
+        subtitle_ru: 'Традиционная керамика • Казахская культура',
+        era: '19th Century',
+        region: 'Kazakhstan',
+        region_ru: 'Казахстан',
+        category: 'object',
+        desc: 'A traditional Kazakh ceramic vase, showcasing intricate craftsmanship and cultural motifs in nomadic art.',
+        desc_ru: 'Традиционная казахская керамическая ваза, демонстрирующая сложное мастерство и культурные мотивы в кочевом искусстве.',
+        model: 'qum.glb',
+        poster: 'qum.jpeg',
+        orbit: '20deg 70deg 2.6m',
+        fov: '30deg',
+        scale: '1 1 1',
+        hotspots: [
+          { label: 'Rim', label_ru: 'Край', position: '0.05 0.18 0.05', normal: '0 1 0', note: 'The decorative rim of the vase.', note_ru: 'Декоративный край вазы.' },
+          { label: 'Body', label_ru: 'Корпус', position: '0.00 0.02 0.15', normal: '0 0 1', note: 'The main body with cultural patterns.', note_ru: 'Основной корпус с культурными узорами.' },
+          { label: 'Base', label_ru: 'Основание', position: '0.00 -0.03 -0.14', normal: '0 0 -1', note: 'The stable base of the vase.', note_ru: 'Стабильное основание вазы.' }
+        ]
+      },
+      {
+        id: 'bust',
+        title: 'Kazakh Gold Ornament',
+        title_ru: 'Казахское золотое украшение',
+        subtitle: 'Precious Metal • Kazakh Heritage',
+        subtitle_ru: 'Драгоценный металл • Казахское наследие',
+        era: 'Ancient Times',
+        region: 'Kazakhstan',
+        region_ru: 'Казахстан',
+        category: 'sculpture',
+        desc: 'A beautiful gold ornament from Kazakh history, showcasing intricate craftsmanship and cultural significance.',
+        desc_ru: 'Красивое золотое украшение из казахской истории, демонстрирующее сложное мастерство и культурное значение.',
+        model: 'gold.glb',
+        poster: 'golda.jpg',
+        orbit: '0deg 75deg 2.4m',
+        fov: '28deg',
+        scale: '1 1 1',
+        hotspots: [
+          { label: 'Gold Surface', label_ru: 'Золотая поверхность', position: '0.00 0.13 0.10', normal: '0 0 1', note: 'Shining gold surface reflecting light and history.', note_ru: 'Блестящая золотая поверхность, отражающая свет и историю.' },
+          { label: 'Engraving', label_ru: 'Гравировка', position: '0.00 0.08 0.12', normal: '0 0 1', note: 'Detailed engravings telling stories of the past.', note_ru: 'Детальные гравировки, рассказывающие истории прошлого.' },
+          { label: 'Mounting', label_ru: 'Крепление', position: '0.10 -0.05 0.06', normal: '1 0 0', note: 'Secure mounting for durability and wear.', note_ru: 'Надежное крепление для долговечности и ношения.' }
+        ]
+      },
+      {
+        id: 'temple',
+        title: 'Kazakh Deer Sculpture',
+        title_ru: 'Казахская скульптура оленя',
+        subtitle: 'Wildlife • Kazakh Nature',
+        subtitle_ru: 'Дикая природа • Казахская природа',
+        era: 'Modern Era',
+        region: 'Kazakhstan',
+        region_ru: 'Казахстан',
+        category: 'sculpture',
+        desc: 'A majestic deer sculpture representing the beauty and spirit of Kazakh wildlife and nomadic heritage.',
+        desc_ru: 'Величественная скульптура оленя, представляющая красоту и дух казахской дикой природы и кочевого наследия.',
+        model: 'shika.glb',
+        poster: 'gold.jpg',
+        orbit: '-35deg 65deg 6.5m',
+        fov: '35deg',
+        scale: '1 1 1',
+        hotspots: [
+          { label: 'Antlers', label_ru: 'Рога', position: '-0.62 1.43 0.35', normal: '0 1 0', note: 'Majestic antlers symbolizing strength and grace.', note_ru: 'Величественные рога, символизирующие силу и грацию.' },
+          { label: 'Body', label_ru: 'Тело', position: '-0.55 0.72 0.42', normal: '0 0 1', note: 'Sleek body adapted for the steppe environment.', note_ru: 'Стройное тело, адаптированное к степной среде.' },
+          { label: 'Hooves', label_ru: 'Копыта', position: '-0.10 1.75 0.05', normal: '0 0 1', note: 'Strong hooves for traversing vast landscapes.', note_ru: 'Крепкие копыта для преодоления обширных ландшафтов.' }
+        ]
+      },
+      {
+        id: 'gadget',
+        title: 'Kazakh Tenge Coin',
+        title_ru: 'Казахская монета тенге',
+        subtitle: 'Currency • Modern Kazakhstan',
+        subtitle_ru: 'Валюта • Современный Казахстан',
+        era: '1993-Present',
+        region: 'Kazakhstan',
+        region_ru: 'Казахстан',
+        category: 'object',
+        desc: 'The official currency of Kazakhstan, featuring symbols of national pride and economic independence.',
+        desc_ru: 'Официальная валюта Казахстана, символизирующая национальную гордость и экономическую независимость.',
+        model: 'tenge.glb',
+        poster: 'tenge.jpg',
+        orbit: '45deg 70deg 3.2m',
+        fov: '32deg',
+        scale: '1 1 1',
+        hotspots: [
+          { label: 'Obverse', label_ru: 'Лицевая сторона', position: '0.05 0.35 0.10', normal: '0 1 0', note: 'Features the coat of arms and denomination.', note_ru: 'Изображает герб и номинал.' },
+          { label: 'Reverse', label_ru: 'Оборотная сторона', position: '0.00 0.24 0.18', normal: '0 0 1', note: 'Shows cultural motifs and historical figures.', note_ru: 'Показывает культурные мотивы и исторических деятелей.' },
+          { label: 'Edge', label_ru: 'Край', position: '0.00 0.18 -0.16', normal: '0 0 -1', note: 'Inscribed with security features for authenticity.', note_ru: 'Надписан защитными элементами для аутентичности.' }
+        ]
+      },
+      {
+        id: 'lantern',
+        title: 'Kazakh Monshak Accessory',
+        title_ru: 'Казахский аксессуар моншак',
+        subtitle: 'Accessory • Kazakh Women\'s Heritage',
+        subtitle_ru: 'Аксессуар • Наследие казахских женщин',
+        era: 'Traditional Era',
+        region: 'Kazakhstan',
+        region_ru: 'Казахстан',
+        category: 'object',
+        desc: 'Monshak is a traditional Kazakh women\'s head accessory, often made of silver or gold, worn as part of bridal attire to symbolize prosperity, protection, and marital status.',
+        desc_ru: 'Моншак - традиционный аксессуар для головы казахских женщин, часто сделанный из серебра или золота, носимый как часть свадебного наряда для символизации процветания, защиты и семейного статуса.',
+        model: 'monsh.glb',
+        poster: 'monsh.png',
+        orbit: '-20deg 75deg 2m',
+        fov: '30deg',
+        scale: '1 1 1',
+        hotspots: [
+            { label: 'Ornament', label_ru: 'Украшение', position: '0 0.5 0', normal: '0 1 0', note: 'Intricate ornamentation reflecting traditional designs.', note_ru: 'Замысловатые украшения, отражающие традиционные узоры.' }
+        ]
+      },
+      {
+        id: 'chair',
+        title: 'Kazakh Kagan Monument',
+        title_ru: 'Казахский монумент Кагана',
+        subtitle: 'Heritage • Kazakh Culture',
+        subtitle_ru: 'Наследие • Казахская культура',
+        era: 'Ancient Times',
+        region: 'Kazakhstan',
+        region_ru: 'Казахстан',
+        category: 'object',
+        desc: 'A monument dedicated to the ancient Kazakh Kagan, representing the rich history and leadership of the Kazakh people.',
+        desc_ru: 'Монумент, посвященный древнему казахскому Кагану, представляющий богатую историю и лидерство казахского народа.',
+        model: 'kagan.glb',
+        poster: 'kagan.png',
+        orbit: '45deg 55deg 2m',
+        fov: '30deg',
+        scale: '1 1 1',
+        hotspots: [
+            { label: 'Inscription', label_ru: 'Надпись', position: '0 0.4 0.2', normal: '0 1 0', note: 'Ancient inscriptions preserving historical knowledge.', note_ru: 'Древние надписи, сохраняющие исторические знания.' }
+        ]
+      }
+    ];
+
+    const els = {
+      viewer: document.getElementById('viewer'),
+      hotspotWrap: document.getElementById('hotspotWrap'),
+      grid: document.getElementById('grid'),
+      search: document.getElementById('search'),
+      title: document.getElementById('artifactTitle'),
+      meta: document.getElementById('artifactMeta'),
+      desc: document.getElementById('artifactDesc'),
+      statCount: document.getElementById('statCount'),
+      statMode: document.getElementById('statMode'),
+      exposure: document.getElementById('exposure'),
+      exposureVal: document.getElementById('exposureVal'),
+      btnRotate: document.getElementById('btnRotate'),
+      rotateVal: document.getElementById('rotateVal'),
+      btnReset: document.getElementById('btnReset'),
+      btnRandom: document.getElementById('btnRandom'),
+      btnFocus: document.getElementById('btnFocus'),
+      toast: document.getElementById('toast'),
+      toastText: document.getElementById('toastText'),
+      modal: document.getElementById('modal'),
+      modalTitle: document.getElementById('modalTitle'),
+      modalSubtitle: document.getElementById('modalSubtitle'),
+      modalBody: document.getElementById('modalBody'),
+      modalClose: document.getElementById('modalClose'),
+      btnHelp: document.getElementById('btnHelp'),
+      btnCredits: document.getElementById('btnCredits'),
+      btnLang: document.getElementById('btnLang')
+    };
+
+    const state = {
+      filter: 'all',
+      query: '',
+      selectedId: null,
+      autoRotate: true,
+      focusMode: false,
+      env: 'neutral',
+      lang: 'en'
+    };
+
+    function showToast(text) {
+      els.toastText.textContent = text;
+      els.toast.classList.remove('opacity-0');
+      els.toast.classList.add('opacity-100');
+      window.clearTimeout(showToast._t);
+      showToast._t = window.setTimeout(() => {
+        els.toast.classList.add('opacity-0');
+        els.toast.classList.remove('opacity-100');
+      }, 2200);
+    }
+
+    function openModal({ title, subtitle, body }) {
+      els.modalTitle.textContent = title;
+      els.modalSubtitle.textContent = subtitle;
+      els.modalBody.innerHTML = body;
+      els.modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+      els.modal.classList.add('hidden');
+      document.body.style.overflow = '';
+    }
+
+    // Language Helper
+    function t(key) {
+      return translations[state.lang][key] || key;
+    }
+
+    function getArtifactText(a, field) {
+      if (state.lang === 'ru') {
+        return a[`${field}_ru`] || a[field];
+      }
+      return a[field];
+    }
+
+    function setLanguage(lang) {
+      state.lang = lang;
+      els.btnLang.textContent = lang === 'en' ? 'RU' : 'EN';
+      
+      // Update static UI
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.dataset.i18n;
+        if (translations[lang][key]) {
+          el.textContent = translations[lang][key];
+        }
+      });
+
+      // Update attributes
+      els.search.placeholder = t('placeholderSearch');
+
+      // Update dynamic content
+      renderGrid();
+      if (state.selectedId) {
+        selectArtifact(state.selectedId);
+      }
+    }
+
+    function matches(a) {
+      const q = state.query.trim().toLowerCase();
+      const inFilter = state.filter === 'all' || a.category === state.filter;
+      if (!q) return inFilter;
+      
+      // Search in both languages or just current? Let's search all fields.
+      const hay = `
+        ${a.title} ${a.subtitle} ${a.era} ${a.region} ${a.category}
+        ${a.title_ru || ''} ${a.subtitle_ru || ''} ${a.region_ru || ''}
+      `.toLowerCase();
+      
+      return inFilter && hay.includes(q);
+    }
+
+    function renderGrid() {
+      const list = artifacts.filter(matches);
+      els.grid.innerHTML = '';
+
+      if (!list.length) {
+        els.grid.innerHTML = `
+          <div class="sm:col-span-2 lg:col-span-3 rounded-2xl border border-white/10 bg-white/5 p-6 text-sm text-zinc-300">
+            ${t('noResults')}
+          </div>
+        `;
+        return;
+      }
+
+      for (const a of list) {
+        const title = getArtifactText(a, 'title');
+        const subtitle = getArtifactText(a, 'subtitle');
+        const region = getArtifactText(a, 'region');
+        
+        const card = document.createElement('button');
+        card.className = `group text-left rounded-2xl border border-white/10 bg-white/5 hover:bg-white/10 transition overflow-hidden`;
+        card.setAttribute('data-id', a.id);
+        card.innerHTML = `
+          <div class="relative aspect-[16/10] overflow-hidden">
+            <img alt="${title}" src="${a.poster}" class="h-full w-full object-cover opacity-90 group-hover:opacity-100 transition" loading="lazy" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent"></div>
+            <div class="absolute left-3 bottom-3 right-3">
+              <p class="text-xs text-zinc-200/90">${a.era} • ${region}</p>
+              <p class="mt-1 font-semibold">${title}</p>
+            </div>
+          </div>
+          <div class="p-4">
+            <p class="text-sm text-zinc-300">${subtitle}</p>
+            <div class="mt-3 flex items-center justify-between">
+              <span class="text-xs text-zinc-400">${t('cat_' + a.category)}</span>
+              <span class="text-xs text-amber-200 opacity-0 group-hover:opacity-100 transition">${t('load3D')}</span>
+            </div>
+          </div>
+        `;
+        card.addEventListener('click', () => selectArtifact(a.id));
+        els.grid.appendChild(card);
+      }
+    }
+
+    function clearHotspots() {
+      const existing = els.viewer.querySelectorAll('button[slot^="hotspot-"]');
+      existing.forEach(n => n.remove());
+    }
+
+    function addHotspots(artifact) {
+      clearHotspots();
+      artifact.hotspots?.forEach((h, idx) => {
+        const btn = document.createElement('button');
+        btn.setAttribute('slot', `hotspot-${idx}`);
+        btn.setAttribute('data-position', h.position);
+        btn.setAttribute('data-normal', h.normal);
+        btn.className = 'hotspot';
+        btn.type = 'button';
+        
+        const label = state.lang === 'ru' ? (h.label_ru || h.label) : h.label;
+        const note = state.lang === 'ru' ? (h.note_ru || h.note) : h.note;
+
+        btn.textContent = label;
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          showToast(note);
+        });
+        els.viewer.appendChild(btn);
+      });
+    }
+
+    function selectArtifact(id) {
+      const a = artifacts.find(x => x.id === id);
+      if (!a) return;
+      state.selectedId = id;
+
+      const title = getArtifactText(a, 'title');
+      const subtitle = getArtifactText(a, 'subtitle');
+      const region = getArtifactText(a, 'region');
+      const desc = getArtifactText(a, 'desc');
+
+      els.title.textContent = title;
+      els.meta.textContent = `${subtitle} • ${a.era} • ${region}`;
+      els.desc.textContent = desc;
+
+      // Only update model source if it changed (optimization)
+      const currentSrc = els.viewer.getAttribute('src');
+      if (currentSrc !== a.model) {
+        els.viewer.setAttribute('src', a.model);
+        els.viewer.setAttribute('poster', a.poster);
+        els.viewer.setAttribute('camera-orbit', a.orbit);
+        els.viewer.setAttribute('field-of-view', a.fov);
+        els.viewer.setAttribute('scale', a.scale);
+        
+        // Reset progress bar visual
+        const updateBar = els.viewer.querySelector('.update-bar');
+        if (updateBar) updateBar.style.width = '0%';
+      }
+
+      addHotspots(a);
+
+      // Visual hint
+      showToast(`${t('toastLoaded')} ${title}`);
+
+      // Scroll viewer into view on small screens if triggered by user click (not initial load)
+      // Check if we are inside a user interaction stack via event presence or just simplistic check
+      // For now, simple check:
+      if (document.activeElement && document.activeElement.closest('#grid') && window.matchMedia('(max-width: 768px)').matches) {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function setEnv(env) {
+      state.env = env;
+      const map = {
+        neutral: 'neutral',
+        legacy: 'https://modelviewer.dev/shared-assets/environments/aircraft_workshop_01_1k.hdr',
+        street: 'https://modelviewer.dev/shared-assets/environments/parking.hdr'
+      };
+      els.viewer.setAttribute('environment-image', map[env] ?? 'neutral');
+      showToast(`${t('lblLighting')}: ${t('light' + env.charAt(0).toUpperCase() + env.slice(1))}`);
+    }
+
+    function setAutoRotate(on) {
+      state.autoRotate = on;
+      if (on) els.viewer.setAttribute('auto-rotate', '');
+      else els.viewer.removeAttribute('auto-rotate');
+      els.rotateVal.textContent = on ? t('on') : t('off');
+    }
+
+    function resetView() {
+      els.viewer.resetTurntableRotation?.();
+      els.viewer.cameraOrbit = els.viewer.getAttribute('camera-orbit');
+      els.viewer.jumpCameraToGoal?.();
+      showToast(t('toastReset'));
+    }
+
+    function toggleFocusMode() {
+      state.focusMode = !state.focusMode;
+      if (state.focusMode) {
+        els.viewer.setAttribute('field-of-view', '20deg');
+        els.viewer.setAttribute('camera-orbit', '0deg 75deg 1.9m');
+        showToast(t('toastFocusOn'));
+      } else {
+        const a = artifacts.find(x => x.id === state.selectedId);
+        if (a) {
+          els.viewer.setAttribute('field-of-view', a.fov);
+          els.viewer.setAttribute('camera-orbit', a.orbit);
+        }
+        showToast(t('toastFocusOff'));
+      }
+    }
+
+    function initProgressBar() {
+      const updateBar = els.viewer.querySelector('.update-bar');
+      els.viewer.addEventListener('progress', (event) => {
+        const p = event.detail.totalProgress;
+        updateBar.style.width = `${Math.round(p * 100)}%`;
+      });
+    }
+
+    function initARStatus() {
+      const refresh = () => {
+        const can = !!els.viewer.canActivateAR;
+        els.statMode.textContent = '3D' + (can ? ' + AR' : '');
+        document.getElementById('arHint').textContent = can
+          ? t('arReady')
+          : t('arNotReady');
+      };
+      els.viewer.addEventListener('load', refresh);
+      setTimeout(refresh, 600);
+    }
+
+    function wireUI() {
+      // Lang Switcher
+      els.btnLang.addEventListener('click', () => {
+        setLanguage(state.lang === 'en' ? 'ru' : 'en');
+      });
+
+      // Filters
+      document.querySelectorAll('.filterBtn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.filter = btn.dataset.filter;
+          document.querySelectorAll('.filterBtn').forEach(b => b.classList.remove('ring-2', 'ring-amber-300/25', 'border-amber-400/40'));
+          btn.classList.add('ring-2', 'ring-amber-300/25', 'border-amber-400/40');
+          renderGrid();
+        });
+      });
+      document.querySelector('.filterBtn[data-filter="all"]').classList.add('ring-2', 'ring-amber-300/25', 'border-amber-400/40');
+
+      // Search
+      els.search.addEventListener('input', () => {
+        state.query = els.search.value;
+        renderGrid();
+      });
+
+      // Env
+      document.querySelectorAll('.envBtn').forEach(btn => {
+        btn.addEventListener('click', () => setEnv(btn.dataset.env));
+      });
+
+      // Exposure
+      els.exposure.addEventListener('input', () => {
+        const v = Number(els.exposure.value);
+        els.viewer.exposure = v;
+        els.exposureVal.textContent = v.toFixed(2);
+      });
+
+      // Rotate
+      els.btnRotate.addEventListener('click', () => setAutoRotate(!state.autoRotate));
+
+      // Reset
+      els.btnReset.addEventListener('click', resetView);
+
+      // Surprise
+      els.btnRandom.addEventListener('click', () => {
+        const list = artifacts.filter(matches);
+        const pick = list[Math.floor(Math.random() * list.length)] || artifacts[0];
+        selectArtifact(pick.id);
+      });
+
+      // Focus
+      els.btnFocus.addEventListener('click', toggleFocusMode);
+
+      // Modal
+      els.modalClose.addEventListener('click', closeModal);
+      els.modal.addEventListener('click', (e) => {
+        if (e.target === els.modal.firstElementChild) closeModal();
+      });
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !els.modal.classList.contains('hidden')) closeModal();
+      });
+
+      els.btnHelp.addEventListener('click', () => {
+        // Need to localize this manually or create logic
+        const isRu = state.lang === 'ru';
+        openModal({
+          title: isRu ? 'Как смотреть' : 'How to view artifacts',
+          subtitle: isRu ? 'Управление' : 'Quick controls',
+          body: isRu ? 
+          `<ul class="list-disc pl-5 space-y-2">
+             <li><b>Вращение:</b> нажмите и тяните.</li>
+             <li><b>Зум:</b> колесо мыши / щипок.</li>
+             <li><b>Хотспоты:</b> нажимайте на точки интереса.</li>
+             <li><b>AR:</b> нажмите кнопку AR (на телефоне).</li>
+           </ul>` :
+          `<ul class="list-disc pl-5 space-y-2">
+              <li><b>Rotate:</b> click/touch and drag.</li>
+              <li><b>Zoom:</b> mouse wheel / trackpad pinch / two-finger pinch.</li>
+              <li><b>Pan:</b> right mouse drag or two-finger drag (device dependent).</li>
+              <li><b>Hotspots:</b> click the labeled markers on the model to read notes.</li>
+              <li><b>AR:</b> tap <i>View in your space</i> (supported on some phones/tablets).</li>
+            </ul>`
+        });
+      });
+
+      els.btnCredits.addEventListener('click', (e) => {
+        e.preventDefault();
+        const isRu = state.lang === 'ru';
+        openModal({
+          title: isRu ? 'Кредиты' : 'Credits & licensing',
+          subtitle: isRu ? 'Примеры моделей' : 'Sample assets used in this demo',
+          body: isRu ?
+            `<p class="text-zinc-300">Используются публичные модели с <a class="text-amber-200 hover:underline" href="https://modelviewer.dev/" target="_blank">modelviewer.dev</a>.</p>` :
+            `<p class="text-zinc-300">This page uses publicly available sample models and HDR environments hosted by <a class="text-amber-200 hover:underline" href="https://modelviewer.dev/" target="_blank" rel="noreferrer">modelviewer.dev</a> for demonstration purposes.</p>`
+        });
+      });
+    }
+
+    function bootstrap() {
+      els.statCount.textContent = String(artifacts.length);
+
+      // Defaults
+      setEnv('neutral');
+      setAutoRotate(true);
+      
+      initProgressBar();
+      initARStatus();
+      wireUI();
+      
+      // Initial language set (forces render)
+      setLanguage('en'); 
+
+      // Load first artifact
+      selectArtifact(artifacts[0].id);
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>

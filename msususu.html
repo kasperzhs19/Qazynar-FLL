@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Виртуальный 3D Музей</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .title-font {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        #viewer-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: radial-gradient(ellipse at center, #2a2a4a 0%, #1a1a2e 100%);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 0 100px rgba(255,255,255,0.02);
+        }
+        
+        model-viewer {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .exhibit-card {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .exhibit-card:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .exhibit-card.active {
+            border-color: #d4af37;
+            background: rgba(212,175,55,0.1);
+        }
+        
+        .control-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255,255,255,0.2);
+            border-color: #d4af37;
+        }
+        
+        .loading-spinner {
+            border: 3px solid rgba(255,255,255,0.1);
+            border-top: 3px solid #d4af37;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .glow-text {
+            text-shadow: 0 0 20px rgba(212,175,55,0.5);
+        }
+        
+        .info-panel {
+            background: linear-gradient(180deg, rgba(26,26,46,0.95) 0%, rgba(15,52,96,0.95) 100%);
+            border: 1px solid rgba(212,175,55,0.3);
+        }
+        
+        .category-btn {
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .category-btn.active {
+            background: rgba(212,175,55,0.2);
+            border-color: #d4af37;
+        }
+        
+        .hotspot {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, #d4af37 0%, transparent 70%);
+            border-radius: 50%;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+    </style>
+</head>
+<body class="text-white">
+    <!-- Header -->
+    <header class="py-6 px-4 border-b border-white/10">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center">
+                    <svg class="w-7 h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18l6.9 3.45L12 11.09 5.1 7.63 12 4.18zM4 8.82l7 3.5v7.86l-7-3.5V8.82zm9 11.36v-7.86l7-3.5v7.86l-7 3.5z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="title-font text-2xl font-bold glow-text text-amber-400">Виртуальный 3D Музей</h1>
+                    <p class="text-sm text-gray-400">Исследуйте культурное наследие в интерактивном формате</p>
+                </div>
+            </div>
+            <nav class="hidden md:flex gap-6">
+                <a href="#" class="hover:text-amber-400 transition-colors">Главная</a>
+                <a href="#" class="hover:text-amber-400 transition-colors">Коллекции</a>
+                <a href="#" class="hover:text-amber-400 transition-colors">Выставки</a>
+                <a href="#" class="hover:text-amber-400 transition-colors">О музее</a>
+            </nav>
+        </div>
+    </header>
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-8">
+        <!-- 3D Viewer Section -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="title-font text-3xl font-bold" id="exhibit-title">Древний Сосуд</h2>
+                <div class="flex gap-2">
+                    <button class="control-btn px-4 py-2 rounded-lg flex items-center gap-2" onclick="resetCamera()">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span>Сброс</span>
+                    </button>
+                    <button class="control-btn px-4 py-2 rounded-lg flex items-center gap-2" onclick="toggleAutoRotate()">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span>Авто</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div id="viewer-container">
+                <div class="absolute bottom-4 left-4 text-sm text-gray-400 bg-black/50 px-3 py-2 rounded-lg">
+                    <span>🖱️ ЛКМ: вращение</span>
+                    <span class="ml-3">🔄 Колесо: масштаб</span>
+                    <span class="ml-3">➡️ ПКМ: перемещение</span>
+                </div>
+            </div>
+            
+            <!-- Model Info -->
+            <div class="info-panel mt-4 p-6 rounded-xl">
+                <div class="grid md:grid-cols-3 gap-6">
+                    <div>
+                        <h3 class="text-amber-400 font-semibold mb-2">Период создания</h3>
+                        <p class="text-gray-300" id="period">XV век до н.э.</p>
+                    </div>
+                    <div>
+                        <h3 class="text-amber-400 font-semibold mb-2">Материал</h3>
+                        <p class="text-gray-300" id="material">Керамика, роспись</p>
+                    </div>
+                    <div>
+                        <h3 class="text-amber-400 font-semibold mb-2">Происхождение</h3>
+                        <p class="text-gray-300" id="origin">Казахстан, Сарыарка</p>
+                    </div>
+                </div>
+                <div class="mt-4 pt-4 border-t border-white/10">
+                    <p class="text-gray-300" id="description">Этот древний сосуд был обнаружен при раскопках курганов Сарыарки. Он представляет собой уникальный образец керамического искусства кочевников эпохи бронзы. Сосуд украшен характерным геометрическим орнаментом, отражающим мировоззрение древних племён.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exhibit Gallery -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" id="gallery">
+            <!-- Gallery items will be generated by JS -->
+        </div>
+    </main>
+    <!-- Footer -->
+    <footer class="mt-16 py-8 border-t border-white/10">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-400">
+            <p>© 2024 Виртуальный 3D Музей. Все права защищены.</p>
+            <p class="mt-2 text-sm">Создано с использованием Three.js</p>
+        </div>
+    </footer>
+    <script>
+        alert('Script loaded');
+        // Exhibit data
+        const exhibits = [
+            {
+                id: 1,
+                name: "Древний Сосуд",
+                period: "XV век до н.э.",
+                material: "Керамика, роспись",
+                origin: "Казахстан, Сарыарка",
+                description: "Этот древний сосуд был обнаружен при раскопках курганов Сарыарки. Он представляет собой уникальный образец керамического искусства кочевников эпохи бронзы.",
+                category: "ceramics",
+                color: 0x8B4513,
+                shape: "vase",
+                model: "qum.glb"
+            },
+            {
+                id: 2,
+                name: "Золотое Изображение кагана",
+                period: "III век н.э.",
+                material: "Золото",
+                origin: "Казахстан, ВКО",
+                description: "Роскошный артефакт сарматского правителя, найденный в Сарматском кургане. Символизирует власть и богатство.",
+                category: "metal",
+                color: 0xFFD700,
+                shape: "statuette",
+                model: "gold.glb"
+            },
+            {
+                id: 3,
+                name: "Сакская фигура оленя",
+                period: "II тысячелетие до н.э.",
+                material: "Золото",
+                origin: "Казахстан, ЮКО",
+                description: "Древний артефакт времен саков, выполненный в виде стилизованного оленя. Представляет собой пример высокого мастерства древних ювелиров.",
+                category: "metal",
+                color: 0x696969,
+                shape: "statue",
+                model: "shika.glb"
+            },
+            {
+                id: 4,
+                name: "Статуэтка кагана",
+                period: "VII век н.э.",
+                material: "Золото",
+                origin: "Казахстан, ЗКО",
+                description: "Пример золотого сокровища рода Гектюрков где изображён каган Тегин",
+                category: "metal",
+                color: 0xDC143C,
+                shape: "statuette",
+                model: "kagan.glb"
+            },
+            {
+                id: 5,
+                name: "Охотничий Клинок",
+                period: "V век до н.э.",
+                material: "Железо",
+                origin: "Казахстан, Сарыарка",
+                description: "Древий клинок с изображением волка на железе. Использовался кочевниками для охоты и защиты.",
+                category: "metal",
+                color: 0xCD7F32,
+                shape: "cylinder",
+                model: "free_kazakh_hunting_knife.glb"
+            },
+            {
+                id: 6,
+                name: "Старая монетка",
+                period: "VIII век н.э.",
+                material: "Железо",
+                origin: "Казахстан, Семиречье",
+                description: "Монета времен Тюркского каганата с изображением древнетюркского символа. Использовалась в торговле и как символ власти.",
+                category: "metal",
+                color: 0xD2691E,
+                shape: "statuette",
+                model: "tenge.glb"
+            },
+            {
+                id: 7,
+                name: "Моншак с рунами",
+                period: "IX век",
+                material: "Железо",
+                origin: "Казахстан, Восточный Казахстан",
+                description: "Традиционный моншак с нанесёнными руническими символами. Использовался в обрядах и как амулет.",
+                category: "metal",
+                color: 0xA0522D,
+                shape: "cube",
+                model: "monshak1.glb"
+            },
+            {
+                id: 8,
+                name: "Моншак ",
+                period: "XVIII век",
+                material: "Железо",
+                origin: "Казахстан, Центральный Казахстан",
+                description: "Традиционный моншак, используемый для красоты девушками казахских племён.",
+                category: "metal",
+                color: 0x2F4F4F,
+                shape: "plane",
+                model: "monsh.glb"
+            }
+        ];
+        // Three.js variables
+        let scene, camera, renderer, currentMesh;
+        let isAutoRotating = false;
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let orbitRadius = 5;
+        // Initialize Three.js scene
+        function init3D() {
+            const container = document.getElementById('viewer-container');
+            
+            // Scene
+            scene = new THREE.Scene();
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 5;
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+            
+            const mainLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            mainLight.position.set(5, 5, 5);
+            mainLight.castShadow = true;
+            scene.add(mainLight);
+            
+            const fillLight = new THREE.DirectionalLight(0xd4af37, 0.3);
+            fillLight.position.set(-5, 0, -5);
+            scene.add(fillLight);
+            
+            const topLight = new THREE.PointLight(0xffffff, 0.5);
+            topLight.position.set(0, 10, 0);
+            scene.add(topLight);
+            
+            // Add base platform
+            const platformGeometry = new THREE.CylinderGeometry(3, 3.2, 0.3, 64);
+            const platformMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x1a1a2e, 
+                metalness: 0.3,
+                roughness: 0.7
+            });
+            const platform = new THREE.Mesh(platformGeometry, platformMaterial);
+            platform.position.y = -2;
+            platform.receiveShadow = true;
+            scene.add(platform);
+            
+            // Load first exhibit
+            loadExhibit(exhibits[0]);
+            
+            // Mouse controls
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
+            renderer.domElement.addEventListener('wheel', onMouseWheel);
+            renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+            
+            // Touch controls
+            renderer.domElement.addEventListener('touchstart', onTouchStart);
+            renderer.domElement.addEventListener('touchmove', onTouchMove);
+            renderer.domElement.addEventListener('touchend', onTouchEnd);
+            
+            // Window resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Start animation loop
+            animate();
+            
+            // Hide loading
+            document.getElementById('loading').style.display = 'none';
+        }
+        function createShape(shape, color) {
+            let geometry;
+            const material = new THREE.MeshStandardMaterial({
+                color: color,
+                metalness: 0.3,
+                roughness: 0.4,
+                emissive: color,
+                emissiveIntensity: 0.1
+            });
+            
+            switch(shape) {
+                case 'vase':
+                    geometry = new THREE.LatheGeometry([
+                        new THREE.Vector2(0.5, -1),
+                        new THREE.Vector2(0.7, -0.7),
+                        new THREE.Vector2(0.6, -0.3),
+                        new THREE.Vector2(0.8, 0),
+                        new THREE.Vector2(0.6, 0.3),
+                        new THREE.Vector2(0.5, 0.7),
+                        new THREE.Vector2(0.6, 1),
+                        new THREE.Vector2(0.4, 1)
+                    ], 32);
+                    break;
+                case 'torus':
+                    geometry = new THREE.TorusGeometry(0.8, 0.3, 16, 100);
+                    material.metalness = 0.6;
+                    material.roughness = 0.3;
+                    break;
+                case 'statue':
+                    geometry = new THREE.CylinderGeometry(0.3, 0.5, 2.5, 8);
+                    material.metalness = 0.1;
+                    material.roughness = 0.9;
+                    break;
+                case 'plane':
+                    geometry = new THREE.BoxGeometry(2, 0.1, 1.5);
+                    material.metalness = 0.2;
+                    break;
+                case 'cylinder':
+                    geometry = new THREE.CylinderGeometry(0.8, 0.8, 0.3, 32);
+                    material.metalness = 0.5;
+                    material.roughness = 0.3;
+                    break;
+                case 'statuette':
+                    geometry = new THREE.SphereGeometry(0.6, 32, 32);
+                    geometry.scale(0.7, 1, 0.7);
+                    break;
+                case 'cube':
+                    geometry = new THREE.BoxGeometry(1, 1.5, 0.5);
+                    material.metalness = 0.1;
+                    material.roughness = 0.8;
+                    break;
+                default:
+                    geometry = new THREE.TorusKnotGeometry(0.6, 0.2, 100, 16);
+            }
+            
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            return mesh;
+        }
+        function loadExhibit(exhibit) {
+            // Remove current mesh
+            if (currentMesh) {
+                scene.remove(currentMesh);
+            }
+
+            // Check if exhibit has a model
+            if (exhibit.model) {
+                // Load GLTF model
+                const loader = new THREE.GLTFLoader();
+                loader.load(
+                    exhibit.model,
+                    function (gltf) {
+                        currentMesh = gltf.scene;
+                        currentMesh.position.y = 0;
+                        currentMesh.scale.set(1, 1, 1); // Adjust scale if needed
+                        scene.add(currentMesh);
+                    },
+                    function (xhr) {
+                        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
+                    },
+                    function (error) {
+                        console.error('An error happened', error);
+                        // Fallback to shape if model fails to load
+                        currentMesh = createShape(exhibit.shape, exhibit.color);
+                        currentMesh.position.y = 0;
+                        scene.add(currentMesh);
+                    }
+                );
+            } else {
+                // Create new mesh using shape
+                currentMesh = createShape(exhibit.shape, exhibit.color);
+                currentMesh.position.y = 0;
+                scene.add(currentMesh);
+            }
+
+            // Update info
+            document.getElementById('exhibit-title').textContent = exhibit.name;
+            document.getElementById('period').textContent = exhibit.period;
+            document.getElementById('material').textContent = exhibit.material;
+            document.getElementById('origin').textContent = exhibit.origin;
+            document.getElementById('description').textContent = exhibit.description;
+
+            // Reset camera
+            resetCamera();
+
+            // Update gallery active state
+            document.querySelectorAll('.exhibit-card').forEach(card => {
+                card.classList.remove('active');
+                if (card.dataset.id == exhibit.id) {
+                    card.classList.add('active');
+                }
+            });
+        }
+        function resetCamera() {
+            camera.position.set(0, 2, 5);
+            camera.lookAt(0, 0, 0);
+            orbitRadius = 5;
+        }
+        function toggleAutoRotate() {
+            isAutoRotating = !isAutoRotating;
+        }
+        // Mouse controls
+        function onMouseDown(event) {
+            isDragging = true;
+            previousMousePosition = {
+                x: event.clientX,
+                y: event.clientY
+            };
+        }
+        function onMouseMove(event) {
+            if (!isDragging) return;
+            
+            const deltaX = event.clientX - previousMousePosition.x;
+            const deltaY = event.clientY - previousMousePosition.y;
+            
+            if (event.buttons === 1) { // Left button - rotation
+                if (currentMesh) {
+                    currentMesh.rotation.y += deltaX * 0.01;
+                    currentMesh.rotation.x += deltaY * 0.01;
+                }
+            } else if (event.buttons === 2) { // Right button - orbit
+                const spherical = new THREE.Spherical();
+                spherical.setFromVector3(camera.position);
+                spherical.theta -= deltaX * 0.01;
+                spherical.phi -= deltaY * 0.01;
+                spherical.phi = Math.max(0.1, Math.min(Math.PI - 0.1, spherical.phi));
+                camera.position.setFromSpherical(spherical);
+                camera.lookAt(0, 0, 0);
+            }
+            
+            previousMousePosition = {
+                x: event.clientX,
+                y: event.clientY
+            };
+        }
+        function onMouseUp() {
+            isDragging = false;
+        }
+        function onMouseWheel(event) {
+            event.preventDefault();
+            orbitRadius += event.deltaY * 0.01;
+            orbitRadius = Math.max(2, Math.min(15, orbitRadius));
+            
+            const spherical = new THREE.Spherical();
+            spherical.setFromVector3(camera.position);
+            spherical.radius = orbitRadius;
+            camera.position.setFromSpherical(spherical);
+            camera.lookAt(0, 0, 0);
+        }
+        // Touch controls
+        let touchStartPos = { x: 0, y: 0 };
+        let lastTouchTime = 0;
+        
+        function onTouchStart(event) {
+            touchStartPos = {
+                x: event.touches[0].clientX,
+                y: event.touches[0].clientY
+            };
+        }
+        function onTouchMove(event) {
+            event.preventDefault();
+            const touch = event.touches[0];
+            const deltaX = touch.clientX - touchStartPos.x;
+            const deltaY = touch.clientY - touchStartPos.y;
+            
+            if (currentMesh) {
+                currentMesh.rotation.y += deltaX * 0.01;
+                currentMesh.rotation.x += deltaY * 0.01;
+            }
+            
+            touchStartPos = {
+                x: touch.clientX,
+                y: touch.clientY
+            };
+        }
+        function onTouchEnd(event) {
+            const now = Date.now();
+            if (now - lastTouchTime < 300 && event.changedTouches.length > 0) {
+                // Double tap - reset
+                resetCamera();
+            }
+            lastTouchTime = now;
+        }
+        function onWindowResize() {
+            const container = document.getElementById('viewer-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (isAutoRotating && currentMesh) {
+                currentMesh.rotation.y += 0.005;
+            }
+            
+            renderer.render(scene, camera);
+        }
+        // Gallery rendering
+        function renderGallery(filter = 'all') {
+            console.log('Rendering gallery with filter:', filter);
+            const gallery = document.getElementById('gallery');
+            console.log('Gallery element:', gallery);
+            const filteredExhibits = filter === 'all'
+                ? exhibits
+                : exhibits.filter(e => e.category === filter);
+            console.log('Filtered exhibits:', filteredExhibits);
+
+            gallery.innerHTML = filteredExhibits.map((exhibit, index) => `
+                <div class="exhibit-card rounded-xl p-4 cursor-pointer ${index === 0 ? 'active' : ''}" 
+                     data-id="${exhibit.id}" 
+                     onclick="selectExhibit(${exhibit.id})">
+                    <div class="aspect-square rounded-lg mb-4 flex items-center justify-center relative overflow-hidden"
+                         style="background: linear-gradient(135deg, rgba(30,30,50,0.8), rgba(15,52,96,0.8));">
+                        <div class="w-20 h-20 rounded-full animate-pulse"
+                             style="background: radial-gradient(circle, #${exhibit.color.toString(16).padStart(6, '0')}40, transparent);">
+                        </div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-4xl opacity-30">🏛️</span>
+                        </div>
+                    </div>
+                    <h3 class="font-semibold text-lg mb-1">${exhibit.name}</h3>
+                    <p class="text-sm text-gray-400">${exhibit.period}</p>
+                    <p class="text-xs text-amber-400 mt-2">${exhibit.category === 'ceramics' ? '🏺' : exhibit.category === 'metal' ? '⚔️' : exhibit.category === 'stone' ? '🗿' : '🧵'} ${exhibit.category}</p>
+                </div>
+            `).join('');
+        }
+        function selectExhibit(id) {
+            const exhibit = exhibits.find(e => e.id === id);
+            if (exhibit) {
+                loadExhibit(exhibit);
+            }
+        }
+        function filterCategory(category) {
+            // Update buttons
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.classList.remove('active', 'text-amber-400');
+                if (btn.textContent.toLowerCase().includes(category) || 
+                    (category === 'all' && btn.textContent === 'Все')) {
+                    btn.classList.add('active', 'text-amber-400');
+                } else {
+                    btn.classList.add('text-gray-300');
+                }
+            });
+            
+            renderGallery(category);
+        }
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            init3D();
+            renderGallery();
+        });
+        // Also call directly in case DOMContentLoaded doesn't fire
+        renderGallery();
+    </script>
+</body>
+</html>
