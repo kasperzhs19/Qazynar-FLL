@@ -69,6 +69,7 @@
                 <div class="hidden lg:flex bg-slate-800 rounded-lg p-1">
                     <button id="lang-en" class="px-3 py-1 rounded text-sm font-medium transition bg-sky-500 text-white">EN</button>
                     <button id="lang-ru" class="px-3 py-1 rounded text-sm font-medium transition text-slate-400 hover:text-white">RU</button>
+                    <button id="lang-kz" class="px-3 py-1 rounded text-sm font-medium transition text-slate-400 hover:text-white">KZ</button>
                 </div>
 
                 <!-- Mobile Menu Toggle -->
@@ -100,6 +101,7 @@
             <div class="flex bg-slate-800 rounded-lg p-1 mt-4 justify-center">
                 <button id="lang-en-mobile" class="px-3 py-1 rounded text-sm font-medium transition bg-sky-500 text-white">EN</button>
                 <button id="lang-ru-mobile" class="px-3 py-1 rounded text-sm font-medium transition text-slate-400 hover:text-white">RU</button>
+                <button id="lang-kz-mobile" class="px-3 py-1 rounded text-sm font-medium transition text-slate-400 hover:text-white">KZ</button>
             </div>
         </div>
     </header>
@@ -150,7 +152,7 @@
                 </div>
             </div>
             <div class="mt-12">
-                <h1  class="text-4xl font-bold font-heading mb-6 text-center">Qazynar in action!</h1>
+                <h1  class="text-4xl font-bold font-heading mb-6 text-center lang" data-key="carousel-title">Qazynar in action!</h1>
                 <div class="relative overflow-hidden rounded-2xl glass p-4">
                     <div class="flex transition-transform duration-500" id="carousel">
                         <img src="pit.jpg" alt="pit" class="w-full h-64 sm:h-80 md:h-96 lg:h-[48rem] object-cover flex-shrink-0 rounded-xl">
@@ -273,7 +275,7 @@
             <div class="grid md:grid-cols-3 gap-8">
                 <div class="glass p-6 rounded-2xl">
                     <h3 class="text-xl font-bold mb-4 text-sky-400 lang" data-key="robot-chassis">The Chassis</h3>
-                    <p class="text-slate-400 text-sm lang" data-key="robot-chassis-desc">Our "Mark I" features a compact, low-center-of-gravity design for maximum stability and speed during maneuvers.</p>
+                    <p class="text-slate-400 text-sm lang" data-key="robot-chassis-desc">Our "HellBat" features a compact, low-center-of-gravity design for maximum stability and speed during maneuvers.</p>
                 </div>
                 <div class="glass p-6 rounded-2xl border-t-4 border-sky-500">
                     <h3 class="text-xl font-bold mb-4 text-sky-400 lang" data-key="robot-attachments">Attachments</h3>
@@ -304,20 +306,16 @@
                         <span class="bg-sky-500/20 text-sky-400 px-3 py-1 rounded-full text-sm font-semibold lang" data-key="project-digital">Digital</span>
                         <span class="bg-indigo-500/20 text-indigo-400 px-3 py-1 rounded-full text-sm font-semibold lang" data-key="project-3d">3D</span>
                         <span class="bg-emerald-500/20 text-emerald-400 px-3 py-1 rounded-full text-sm font-semibold lang" data-key="project-arch">Archeological</span>
+                    </a>
                     </div>
-                    <div class="flex gap-4 mt-4">
-                        <a href="https://www.meshy.ai/" class="inline-block rounded-full overflow-hidden border-2 border-sky-500/50 hover:border-sky-500 transition">
-                            <img src="meshy.png" alt="Meshy AI Logo" class="w-16 h-16 object-cover">
-                        </a>
-                        <a href="msususu1.html" class="bg-sky-500/20 text-sky-400 px-4 py-2 rounded-full text-base font-semibold hover:bg-sky-500/30 transition lang" data-key="project-museum">3D Museum</a>
+                    <div class="h-32 mt-6 flex ">
+                    <a href="https://www.meshy.ai/discover" class="w-32  rounded-full font-semibold transition"><img src="meshy.png" class="w-32 h-32 rounded-2xl"></a>
                     </div>
                 </div>
-                <div class="md:w-1/2">
-                    <div class="aspect-video glass rounded-2xl flex items-center justify-center relative group overflow-hidden">
-                        <img src="meshyai.jpeg" alt="Meshy AI" class="w-full h-full object-cover rounded-2xl">
-                        <div class="absolute inset-0 bg-sky-500/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition">
-                            <p class="font-bold lang" data-key="project-meshy">Meshy AI</p>
-                        </div>
+                <div class="md:w-1/2 text-center">
+                          <a href="msususu1.html" class="bg-sky-500/20 text-sky-400 px-12 py-6 rounded-full text-2xl font-semibold hover:bg-sky-500/30 transition lang" data-key="project-museum">Enter 3D Museum</a>
+                    <div class="flex gap-4 mt-4">
+                    </div>
                     </div>
                 </div>
             </div>
@@ -327,11 +325,11 @@
     <!-- Footer -->
     <footer class="py-12 border-t border-white/10">
         <div class="container mx-auto px-6 text-center">
-            <p class="text-slate-500 lang" data-key="footer">&copy; 2025 Team Qazynar. All rights reserved. FLL Challenge Kazakhstan.</p>
+            <p class="text-slate-500 lang" data-key="footer">&copy; 2025/26 Team Qazynar. All rights reserved. FLL Challenge Kazakhstan.</p>
             <div class="flex justify-center space-x-6 mt-6">
                 <p class="d-flex w-40">
-                                <img src="Ntech.jpg" class="ntech rounded-4 ml-5">
-                                <img src="NAR.jpeg" class="ntech rounded-4 ml-5">
+                                <a href="https://www.instagram.com/ntech_academy_uralsk?igsh=azh0cXVyMDh0OWVj"><img src="Ntech.jpg" class="ntech ml-5 rounded-2xl"></a>
+                                <a href="https://www.instagram.com/qazynar_fll_challenge?igsh=bnUwdW1nZjF5ZDVl"><img src="NAR.jpeg" class="ntech ml-5 rounded-2xl"></a>
                             </p>
             </div>
         </div>
@@ -410,6 +408,22 @@
                 'about-values': 'Core Values',
                 'carousel-title': 'Qazynar in action!',
                 'team-title': 'Meet Our Team',
+                'team-name-1': 'Rakhman',
+                'team-role-1': 'Team Captain',
+                'team-name-2': 'Aiym',
+                'team-role-2': 'Researcher',
+                'team-name-3': 'Ademi',
+                'team-role-3': 'Designer',
+                'team-name-4': 'Aruzhan',
+                'team-role-4': 'Manager',
+                'team-name-5': 'Nurdaulet',
+                'team-role-5': 'Robotics Coder',
+                'team-name-6': 'Asylkhan',
+                'team-role-6': 'Robotics Builder',
+                'team-name-7': 'Kaisar',
+                'team-role-7': 'Content Creator',
+                'team-name-8': 'Bolat',
+                'team-role-8': 'Speaker',
                 'robo-title': 'The Robot Game',
                 'robo-desc': 'In the Robot Game, our team designs, builds, and programs an autonomous LEGO robot to complete a series of missions on a themed playing field.',
                 'robo-strategies': 'Strategies',
@@ -422,7 +436,7 @@
                 'robo-map-desc': 'Our strategy is to use optimal paths and code for completing missions efficiently.',
                 'robot-title': 'Robot Design',
                 'robot-chassis': 'The Chassis',
-                'robot-chassis-desc': 'Our "Mark I" features a compact, low-center-of-gravity design for maximum stability and speed during maneuvers.',
+                'robot-chassis-desc': 'Our "HellBat" features a compact, low-center-of-gravity design for maximum stability and speed during maneuvers.',
                 'robot-attachments': 'Attachments',
                 'robot-attachments-desc': 'Modular arms utilizing worm gears allow for high-torque lifting and precise movement for complex mission requirements.',
                 'robot-programming': 'Programming',
@@ -433,7 +447,7 @@
                 'project-digital': 'Digital',
                 'project-3d': '3D',
                 'project-arch': 'Archeological',
-                'project-museum': '3D Museum',
+                'project-museum': 'Enter 3D Museum',
                 'project-meshy': 'Meshy AI',
                 'footer': '© 2025 Team Qazynar. All rights reserved. FLL Challenge Kazakhstan.'
             },
@@ -484,7 +498,7 @@
                 'robo-map-desc': 'Наша стратегия - использовать оптимальные пути и код для эффективного выполнения миссий.',
                 'robot-title': 'Дизайн робота',
                 'robot-chassis': 'Шасси',
-                'robot-chassis-desc': 'Наш "Mark I" имеет компактный дизайн с низким центром тяжести для максимальной стабильности и скорости во время маневров.',
+                'robot-chassis-desc': 'Наш "HellBat" имеет компактный дизайн с низким центром тяжести для максимальной стабильности и скорости во время маневров.',
                 'robot-attachments': 'Крепления',
                 'robot-attachments-desc': 'Модульные руки с использованием червячных передач позволяют высокомоментное поднятие и точное движение для сложных требований миссий.',
                 'robot-programming': 'Программирование',
@@ -495,9 +509,71 @@
                 'project-digital': 'Цифровой',
                 'project-3d': '3D',
                 'project-arch': 'Археологический',
-                'project-museum': '3D Музей',
+                'project-museum': 'Вход в 3D Музей',
                 'project-meshy': 'Meshy AI',
                 'footer': '© 2025 Команда Qazynar. Все права защищены. FLL Challenge Казахстан.'
+            },
+            kz: {
+                title: 'Qazynar командасы - FLL Challenge',
+                'hero-title': 'QAZYNAR КОМАНДАСЫ',
+                'hero-subtitle': 'FIRST Lego League Challenge-те инновация және робототехника шекараларын кеңейту.',
+                'hero-button': 'Біздің жолымызды зерттеңіз',
+                'nav-about': 'FLL туралы',
+                'nav-team': 'Команда',
+                'nav-robo': 'Робо-ойын',
+                'nav-robot': 'Робот дизайны',
+                'nav-project': 'Инновациялық жоба',
+                'about-title': 'FLL туралы',
+                'about-desc1': 'FIRST LEGO League (FLL) Challenge - бұл FIRST ұйымдастырған 9-16 жас аралығындағы студенттер үшін халықаралық жарыстар. Ол балаларға ғылым, технология, инженерия және математика (STEM) салаларын қызықты, практикалық оқыту арқылы таныстырады.',
+                'about-desc2': 'Қатысушылар бағытталған, жаһандық робототехника бағдарламасы арқылы нақты өмірлік мәселелерді шешу тәжірибесін алады, бүгінгі студенттер мен мұғалімдерге бірге жақсы болашақты құруға көмектеседі.',
+                'about-robotics': 'Робототехника',
+                'about-innovation': 'Инновация',
+                'about-teamwork': 'Командалық жұмыс',
+                'about-values': 'Негізгі құндылықтар',
+                'carousel-title': 'Qazynar іс-қимылда!',
+                'team-title': 'Біздің командамызбен танысыңыз!',
+                'team-name-1': 'Рахман',
+                'team-role-1': 'Команда капитаны',
+                'team-name-2': 'Айым',
+                'team-role-2': 'Зерттеуші',
+                'team-name-3': 'Әдемі',
+                'team-role-3': 'Дизайнер',
+                'team-name-4': 'Аружан',
+                'team-role-4': 'Менеджер',
+                'team-name-5': 'Нұрдаулет',
+                'team-role-5': 'Робототехника кодері',
+                'team-name-6': 'Асылхан',
+                'team-role-6': 'Робототехника құрастырушысы',
+                'team-name-7': 'Қайсар',
+                'team-role-7': 'Контент жасаушы',
+                'team-name-8': 'Болат',
+                'team-role-8': 'Спикер',
+                'robo-title': 'Робот ойыны',
+                'robo-desc': 'Робот ойынында біздің команда автономды LEGO роботын жобалайды, құрастырады және бағдарламалайды, тақырыптық ойын алаңында бірқатар миссияларды орындау үшін.',
+                'robo-strategies': 'Стратегиялар',
+                'robo-strat1': 'Оптимизацияланған миссия жолын табу',
+                'robo-strat2': 'Жылдам ауыстыру бекіту жүйесі',
+                'robo-strat3': 'Әр блоктағы дәлдік',
+                'robo-progress': 'Ағымдағы прогресс',
+                'robo-progress-text': '80% миссиялар тұрақты орындалды',
+                'robo-map-title': 'Миссия картасы және тактикасы',
+                'robo-map-desc': 'Біздің стратегиямыз миссияларды тиімді орындау үшін оптималды жолдар мен кодты пайдалану.',
+                'robot-title': 'Робот дизайны',
+                'robot-chassis': 'Шасси',
+                'robot-chassis-desc': 'Біздің "HellBat" компактты, төмен орталық ауырлық центрі дизайнымен ерекшеленеді, маневрлер кезінде максималды тұрақтылық пен жылдамдық үшін.',
+                'robot-attachments': 'Бекітпелер',
+                'robot-attachments-desc': 'Құртты берілістерді пайдаланатын модульдік қолдар күрделі миссия талаптары үшін жоғары моментті көтеру және дәл қозғалысқа мүмкіндік береді.',
+                'robot-programming': 'Бағдарламалау',
+                'robot-programming-desc': 'Автономды навигация және миссия орындалу үшін теңшелген Spike Prime блоктары.',
+                'robot-3d': '3D робот моделі',
+                'project-title': 'Инновациялық жоба',
+                'project-desc': 'Бұл маусымда біздің команда қаржы және мұра сақтаудағы маңызды мәселені анықтады. Біздің шешіміміз, "3D WORLD", артефактілерді заманауи технологиялармен көрсетеді.',
+                'project-digital': 'Цифрлық',
+                'project-3d': '3D',
+                'project-arch': 'Археологиялық',
+                'project-museum': '3D музейге кіру',
+                'project-meshy': 'Meshy AI',
+                'footer': '© 2025 Qazynar командасы. Барлық құқықтар қорғалған. FLL Challenge Қазақстан.'
             }
         };
 
@@ -517,21 +593,42 @@
         // Language Switcher
         const langEn = document.getElementById('lang-en');
         const langRu = document.getElementById('lang-ru');
+        const langKz = document.getElementById('lang-kz');
         const langEnMobile = document.getElementById('lang-en-mobile');
         const langRuMobile = document.getElementById('lang-ru-mobile');
+        const langKzMobile = document.getElementById('lang-kz-mobile');
 
-        function handleLangSwitch(lang, activeBtn, inactiveBtn) {
-            activeBtn.classList.add('bg-sky-500', 'text-white');
-            activeBtn.classList.remove('text-slate-400');
-            inactiveBtn.classList.remove('bg-sky-500', 'text-white');
-            inactiveBtn.classList.add('text-slate-400');
+        function handleLangSwitch(lang) {
+            // Reset all buttons to inactive state
+            [langEn, langRu, langKz, langEnMobile, langRuMobile, langKzMobile].forEach(btn => {
+                btn.classList.remove('bg-sky-500', 'text-white');
+                btn.classList.add('text-slate-400');
+            });
+
+            // Set the active button based on language
+            let activeBtn;
+            if (lang === 'en') {
+                activeBtn = langEn;
+            } else if (lang === 'ru') {
+                activeBtn = langRu;
+            } else if (lang === 'kz') {
+                activeBtn = langKz;
+            }
+
+            if (activeBtn) {
+                activeBtn.classList.add('bg-sky-500', 'text-white');
+                activeBtn.classList.remove('text-slate-400');
+            }
+
             switchLanguage(lang);
         }
 
-        langEn.addEventListener('click', () => handleLangSwitch('en', langEn, langRu));
-        langRu.addEventListener('click', () => handleLangSwitch('ru', langRu, langEn));
-        langEnMobile.addEventListener('click', () => handleLangSwitch('en', langEnMobile, langRuMobile));
-        langRuMobile.addEventListener('click', () => handleLangSwitch('ru', langRuMobile, langEnMobile));
+        langEn.addEventListener('click', () => handleLangSwitch('en'));
+        langRu.addEventListener('click', () => handleLangSwitch('ru'));
+        langKz.addEventListener('click', () => handleLangSwitch('kz'));
+        langEnMobile.addEventListener('click', () => handleLangSwitch('en'));
+        langRuMobile.addEventListener('click', () => handleLangSwitch('ru'));
+        langKzMobile.addEventListener('click', () => handleLangSwitch('kz'));
     </script>
 </body>
 </html>
