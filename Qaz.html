@@ -171,6 +171,7 @@
     <section id="team" class="section-padding">
         <div class="container mx-auto px-6 text-center">
             <h2 class="text-3xl md:text-4xl font-bold font-heading mb-12 lang" data-key="team-title">Meet Our Team</h2>
+            <h3 class="text-2xl md:text-3xl font-bold font-heading mb-8 lang" data-key="team-members-title">Team Members</h3>
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 <!-- Team Member 1 -->
                 <div class="glass p-6 rounded-2xl group hover:border-sky-500/50 transition">
@@ -218,8 +219,8 @@
                 <div class="glass p-6 rounded-2xl group hover:border-sky-500/50 transition">
                     <img src="T.Kaisar.jpeg" alt="Kaisar" class="w-32 h-32 sm:w-40 sm:h-40 rounded-full object-cover mx-auto mb-4">
                     <h3 class="text-xl font-bold mb-1 lang" data-key="team-name-7">Kaisar</h3>
-                    <p class="text-sky-400 text-sm mb-3 lang" data-key="team-role-7">Content Maker</p>
-                    <p class="text-slate-400 text-xs italic">"Content is not king—it's the kingdom. Build wisely, and it will reign forever"</p>
+                    <p class="text-sky-400 text-sm mb-3 lang" data-key="team-role-7">Strategist</p>
+                    <p class="text-slate-400 text-xs italic">"Strategy without tactics is the slowest route to victory. Tactics without strategy is the noise before defeat."</p>
                 </div>
                 <!-- Team Member 8 -->
                 <div class="glass p-6 rounded-2xl group hover:border-sky-500/50 transition">
@@ -227,6 +228,23 @@
                     <h3 class="text-xl font-bold mb-1 lang" data-key="team-name-8">Bolat</h3>
                     <p class="text-sky-400 text-sm mb-3 lang" data-key="team-role-8">Speaker</p>
                     <p class="text-slate-400 text-xs italic">"Be sincere; be brief; be seated."</p>
+                </div>
+            </div>
+            <h3 class="text-2xl md:text-3xl font-bold font-heading mb-8 mt-12 lang" data-key="mentors-title">Mentors</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 justify-center">
+                <!-- Mentor 1 -->
+                <div class="glass p-6 rounded-2xl group hover:border-sky-500/50 transition mx-auto">
+                    <img src="rahila.jpeg" alt="Mentor 1" class="w-32 h-32 sm:w-40 sm:h-40 rounded-full object-cover mx-auto mb-4">
+                    <h3 class="text-xl font-bold mb-1 lang" data-key="mentor-name-1">Rakhila</h3>
+                    <p class="text-sky-400 text-sm mb-3 lang" data-key="mentor-role-1">Mentor</p>
+                    <p class="text-slate-400 text-xs italic lang" data-key="mentor-desc-1">"A mentor is someone who allows you to see the hope inside yourself."</p>
+                </div>
+                <!-- Mentor 2 -->
+                <div class="glass p-6 rounded-2xl group hover:border-sky-500/50 transition mx-auto">
+                    <img src="30.png" alt="Mentor 2" class="w-32 h-32 sm:w-40 sm:h-40 rounded-full object-cover mx-auto mb-4">
+                    <h3 class="text-xl font-bold mb-1 lang" data-key="mentor-name-2">Eraly</h3>
+                    <p class="text-sky-400 text-sm mb-3 lang" data-key="mentor-role-2">Mentor</p>
+                    <p class="text-slate-400 text-xs italic lang" data-key="mentor-desc-2">"Mentoring is a brain to pick, an ear to listen, and a push in the right direction."</p>
                 </div>
             </div>
         </div>
@@ -424,6 +442,10 @@
                 'team-role-7': 'Content Creator',
                 'team-name-8': 'Bolat',
                 'team-role-8': 'Speaker',
+                'mentor-name-1': 'Rakhila',
+                'mentor-role-1': 'Mentor',
+                'mentor-name-2': 'Eraly',
+                'mentor-role-2': 'Mentor',
                 'robo-title': 'The Robot Game',
                 'robo-desc': 'In the Robot Game, our team designs, builds, and programs an autonomous LEGO robot to complete a series of missions on a themed playing field.',
                 'robo-strategies': 'Strategies',
@@ -486,6 +508,10 @@
                 'team-role-7': 'Создатель контента',
                 'team-name-8': 'Болат',
                 'team-role-8': 'Спикер',
+                'mentor-name-1': 'Рахила',
+                'mentor-role-1': 'Ментор',
+                'mentor-name-2': 'Eралы',
+                'mentor-role-2': 'Ментор',
                 'robo-title': 'Игра с роботом',
                 'robo-desc': 'В игре с роботом наша команда проектирует, строит и программирует автономного робота LEGO для выполнения серии миссий на тематическом игровом поле.',
                 'robo-strategies': 'Стратегии',
@@ -530,7 +556,7 @@
                 'about-innovation': 'Инновация',
                 'about-teamwork': 'Командалық жұмыс',
                 'about-values': 'Негізгі құндылықтар',
-                'carousel-title': 'Qazynar іс-қимылда!',
+                'carousel-title': 'Qazynar іс-жүзінде!',
                 'team-title': 'Біздің командамызбен танысыңыз!',
                 'team-name-1': 'Рахман',
                 'team-role-1': 'Команда капитаны',
@@ -629,6 +655,9 @@
         langEnMobile.addEventListener('click', () => handleLangSwitch('en'));
         langRuMobile.addEventListener('click', () => handleLangSwitch('ru'));
         langKzMobile.addEventListener('click', () => handleLangSwitch('kz'));
+
+        // Initialize with English on load
+        switchLanguage('en');
     </script>
 </body>
 </html>
